@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen de Licencia de Conducir - CABA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>Examen de Licencia CABA</h1>
+            </div>
+            <div class="nav-social">
+                <a href="https://www.instagram.com/buenosaires" target="_blank" title="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="https://www.youtube.com/user/GCABA" target="_blank" title="YouTube">
+                    <i class="fab fa-youtube"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <!-- Página de Inicio -->
+        <div id="home-page" class="page active">
+            <div class="hero-section">
+                <h2>Prepárate para tu examen de licencia de conducir</h2>
+                <p>Practica con preguntas reales del examen teórico de la Ciudad de Buenos Aires</p>
+            </div>
+
+            <div class="categories-section">
+                <h3>Selecciona tu categoría de licencia</h3>
+                <div id="categories-grid" class="categories-grid">
+                    <!-- Las categorías se cargan dinámicamente -->
+                </div>
+            </div>
+
+            <div class="features-section">
+                <div class="feature-card">
+                    <i class="fas fa-brain"></i>
+                    <h4>Preguntas Actualizadas</h4>
+                    <p>Base de datos actualizada con las preguntas oficiales del examen</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h4>Progreso en Tiempo Real</h4>
+                    <p>Seguimiento de tu progreso y estadísticas de rendimiento</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h4>Acceso Móvil</h4>
+                    <p>Practica desde cualquier dispositivo, en cualquier momento</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Página del Quiz -->
+        <div id="quiz-page" class="page">
+            <!-- Header original oculto -->
+            <div class="quiz-header" style="display: none;">
+                <button id="back-to-home" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+                <div class="quiz-info">
+                    <h3 id="category-title">Licencia Clase B</h3>
+                </div>
+            </div>
+
+            <!-- Barra de Métricas Horizontal (solo visible en quiz) -->
+            <div class="metrics-header" style="display: none;">
+                <div class="metrics-compact-container">
+                    <!-- Botón Volver -->
+                    <button id="back-to-home-compact" class="btn-back-compact">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+
+                    <!-- Título de Categoría -->
+                    <div class="category-title-compact">
+                        <h4 id="category-title-compact">Licencia Clase B</h4>
+                    </div>
+
+                    <!-- Timer Compacto -->
+                    <div class="metric-compact timer-compact">
+                        <i class="fas fa-clock"></i>
+                        <span class="timer-display">40:00</span>
+                    </div>
+
+                    <!-- Progreso Compacto -->
+                    <div class="metric-compact progress-compact">
+                        <i class="fas fa-list-ol"></i>
+                        <span class="progress-text">
+                            <span class="current-question">1</span>/<span class="total-questions">40</span>
+                        </span>
+                        <div class="progress-bar-mini">
+                            <div class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Respuestas Compactas -->
+                    <div class="metric-compact answers-compact">
+                        <div class="answers-group">
+                            <span class="correct-group">
+                                <i class="fas fa-check success-icon"></i>
+                                <span class="correct-answers">0</span>
+                            </span>
+                            <span class="incorrect-group">
+                                <i class="fas fa-times danger-icon"></i>
+                                <span class="incorrect-answers">0</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>            <div class="quiz-container">
+                <div id="question-card" class="question-card">
+                    <div class="question-image">
+                        <img id="question-img" src="" alt="" style="display: none;">
+                    </div>
+                    <div class="question-text">
+                        <h4 id="question-title">Cargando pregunta...</h4>
+                    </div>
+                    <div class="options-container">
+                        <div id="options-list" class="options-list">
+                            <!-- Opciones se cargan dinámicamente -->
+                        </div>
+                    </div>
+                    <div class="question-actions">
+                        <button id="next-question" class="btn-primary" disabled>
+                            Siguiente Pregunta <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Cargando...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/quiz.js"></script>
+</body>
+</html>
