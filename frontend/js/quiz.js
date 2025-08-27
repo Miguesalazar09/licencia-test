@@ -283,39 +283,29 @@ class QuizMetrics {
             resultsPage.className = 'page active';
             document.querySelector('main').appendChild(resultsPage);
         }
-        resultsPage.innerHTML = `
-            <div class="results-card">
-                <h2 style="margin-bottom:18px;">¡Examen Completado!</h2>
-                <div class="results-blocks">
-                    <div class="result-block tiempo">
-                        <div style="font-size:0.95em;color:#888;">Tiempo usado</div>
-                        <span class="icon">⏱️</span>
-                        <div><span class="time">${timeUsedMinutes}:${timeUsedSeconds.toString().padStart(2, '0')}</span></div>
-                    </div>
-                    <div class="result-block porcentaje">
-                        <div style="font-size:0.95em;color:#888;">Porcentaje</div>
-                        <span class="icon">📊</span>
-                        <div><span class="percent">${successRate}%</span></div>
-                    </div>
-                    <div class="result-block respuestas">
-                        <div class="correctas-block" style="margin-bottom:10px;">
-                            <span style="font-size:0.95em;color:#888;">Correctas</span>
-                            <span class="icon" style="color:#27ae60;">✅</span>
-                            <span class="correct">${correct}</span>/<span>${total}</span>
+                // Inyectar el CSS solo si no está ya presente
+                if (!document.getElementById('result-css')) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = 'css/result.css';
+                    link.id = 'result-css';
+                    document.head.appendChild(link);
+                }
+                resultsPage.innerHTML = `
+                    <div class="result-container">
+                        <div class="result-card">
+                            <h1 class="result-title">¡Examen Completado!</h1>
+                            <div class="result-summary">
+                                <div>⏱ Tiempo usado: <br><span class="result-highlight">${timeUsedMinutes}:${timeUsedSeconds.toString().padStart(2, '0')}</span></div>
+                                <div>📊 Porcentaje: <br><span class="result-highlight">${successRate}%</span></div>
+                                <div>✅ Correctas: <br><span class="result-highlight">${correct}/${total}</span></div>
+                                <div>❌ Incorrectas: <br><span class="result-highlight">${incorrect}</span></div>
+                            </div>
+                            <div class="result-status ${passed ? 'aprobado' : 'reprobado'}">Estado: ${passed ? 'APROBADO' : 'NO APROBADO'}</div>
+                            <button id="restart-quiz-btn" class="result-btn">Volver a intentar</button>
                         </div>
                     </div>
-                    <div class="result-block respuestas">
-                        <div class="incorrectas-block">
-                            <span style="font-size:0.95em;color:#888;">Incorrectas</span>
-                            <span class="icon" style="color:#c0392b;">❌</span>
-                            <span class="incorrect">${incorrect}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="result-status ${passed ? 'aprobado' : 'reprobado'}">Estado: ${passed ? 'APROBADO' : 'NO APROBADO'}</div>
-                <button id="restart-quiz-btn" class="btn-primary">Volver a intentar</button>
-            </div>
-        `;
+                `;
         resultsPage.style.display = 'block';
 
         // Evento para reiniciar
@@ -575,4 +565,30 @@ class QuizManager {
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.QuizManager = new QuizManager();
+
+    // Botón temporal para testear la pantalla de resultados
+    if (!document.getElementById('test-results-btn')) {
+        const btn = document.createElement('button');
+        btn.id = 'test-results-btn';
+        btn.textContent = 'Ver pantalla de resultados (test)';
+        btn.style = 'position:fixed;top:16px;right:16px;z-index:9999;padding:10px 18px;background:#ffd23f;color:#333;font-weight:bold;border-radius:8px;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;';
+        btn.onclick = () => {
+            // Asegura que haya una instancia de metrics
+            if (window.QuizManager) {
+                if (!window.QuizManager.metrics) {
+                    window.QuizManager.metrics = new QuizMetrics();
+                }
+                window.QuizManager.metrics.showResultsPage({
+                    timeUsedMinutes: 0,
+                    timeUsedSeconds: 57,
+                    successRate: 13,
+                    passed: false,
+                    correct: 5,
+                    incorrect: 35,
+                    total: 40
+                });
+            }
+        };
+        document.body.appendChild(btn);
+    }
 });
