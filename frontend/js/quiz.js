@@ -243,31 +243,87 @@ class QuizMetrics {
     
     finishQuiz() {
         clearInterval(this.timerInterval);
-        
         const timeUsed = this.timeLimit - this.timeRemaining;
         const timeUsedMinutes = Math.floor(timeUsed / 60000);
         const timeUsedSeconds = Math.floor((timeUsed % 60000) / 1000);
         const successRate = Math.round((this.correctAnswers / this.totalQuestions) * 100);
         const passed = successRate >= 80;
-        
+
         // Efecto de finalización
         const metricsHeader = document.querySelector('.metrics-header');
         if (metricsHeader) {
             metricsHeader.classList.add('quiz-completion-effect');
         }
-        
+
+        // Mostrar página de resultados
         setTimeout(() => {
-            const results = `¡Examen Completado!\n\n` +
-                          `Tiempo usado: ${timeUsedMinutes}:${timeUsedSeconds.toString().padStart(2, '0')}\n` +
-                          `Porcentaje de aciertos: ${successRate}%\n` +
-                          `Estado: ${passed ? 'APROBADO' : 'NO APROBADO'}\n` +
-                          `Correctas: ${this.correctAnswers}/${this.totalQuestions}\n` +
-                          `Incorrectas: ${this.incorrectAnswers}`;
-            
-            alert(results);
-            this.resetState();
-            window.Router.navigateTo('home');
+            this.showResultsPage({
+                timeUsedMinutes,
+                timeUsedSeconds,
+                successRate,
+                passed,
+                correct: this.correctAnswers,
+                incorrect: this.incorrectAnswers,
+                total: this.totalQuestions
+            });
         }, 1000);
+    }
+
+    showResultsPage({ timeUsedMinutes, timeUsedSeconds, successRate, passed, correct, incorrect, total }) {
+        // Ocultar quiz y métricas
+        document.getElementById('quiz-page').classList.remove('active');
+        const metricsHeader = document.querySelector('.metrics-header');
+        if (metricsHeader) metricsHeader.style.display = 'none';
+
+        // Crear/mostrar página de resultados
+        let resultsPage = document.getElementById('results-page');
+        if (!resultsPage) {
+            resultsPage = document.createElement('div');
+            resultsPage.id = 'results-page';
+            resultsPage.className = 'page active';
+            document.querySelector('main').appendChild(resultsPage);
+        }
+        resultsPage.innerHTML = `
+            <div class="results-card">
+                <h2 style="margin-bottom:18px;">¡Examen Completado!</h2>
+                <div class="results-blocks">
+                    <div class="result-block tiempo">
+                        <div style="font-size:0.95em;color:#888;">Tiempo usado</div>
+                        <span class="icon">⏱️</span>
+                        <div><span class="time">${timeUsedMinutes}:${timeUsedSeconds.toString().padStart(2, '0')}</span></div>
+                    </div>
+                    <div class="result-block porcentaje">
+                        <div style="font-size:0.95em;color:#888;">Porcentaje</div>
+                        <span class="icon">📊</span>
+                        <div><span class="percent">${successRate}%</span></div>
+                    </div>
+                    <div class="result-block respuestas">
+                        <div class="correctas-block" style="margin-bottom:10px;">
+                            <span style="font-size:0.95em;color:#888;">Correctas</span>
+                            <span class="icon" style="color:#27ae60;">✅</span>
+                            <span class="correct">${correct}</span>/<span>${total}</span>
+                        </div>
+                    </div>
+                    <div class="result-block respuestas">
+                        <div class="incorrectas-block">
+                            <span style="font-size:0.95em;color:#888;">Incorrectas</span>
+                            <span class="icon" style="color:#c0392b;">❌</span>
+                            <span class="incorrect">${incorrect}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-status ${passed ? 'aprobado' : 'reprobado'}">Estado: ${passed ? 'APROBADO' : 'NO APROBADO'}</div>
+                <button id="restart-quiz-btn" class="btn-primary">Volver a intentar</button>
+            </div>
+        `;
+        resultsPage.style.display = 'block';
+
+        // Evento para reiniciar
+        document.getElementById('restart-quiz-btn').onclick = () => {
+            this.resetState();
+            resultsPage.style.display = 'none';
+            window.Router.navigateTo('home');
+        };
     }
     
     destroy() {
@@ -279,6 +335,41 @@ class QuizMetrics {
 
 // Gestor del Quiz actualizado
 class QuizManager {
+    showCurrentQuestionFromStorage() {
+        const questions = JSON.parse(localStorage.getItem('questions') || '[]');
+        const index = parseInt(localStorage.getItem('currentQuestionIndex') || '0', 10);
+        if (!Array.isArray(questions) || questions.length === 0) {
+            // Si no hay preguntas en storage, pedirlas a la API y renderizar la primera
+            const categoryId = window.AppState && window.AppState.selectedCategory;
+            if (categoryId) {
+                fetch(`http://localhost:8081/api/questions?categoryId=${encodeURIComponent(categoryId)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        localStorage.setItem('questions', JSON.stringify(data.data));
+                        localStorage.setItem('currentQuestionIndex', '0');
+                        if (Array.isArray(data.data) && data.data.length > 0) {
+                            this.currentQuestion = data.data[0];
+                            this.renderQuestion(data.data[0]);
+                        } else {
+                            window.Router.showError('No hay preguntas disponibles para esta categoría.');
+                        }
+                    })
+                    .catch(() => {
+                        window.Router.showError('No se pudieron cargar las preguntas.');
+                    });
+            } else {
+                window.Router.showError('No hay preguntas disponibles para esta categoría.');
+            }
+            return;
+        }
+        if (index < questions.length) {
+            this.currentQuestion = questions[index];
+            this.renderQuestion(questions[index]);
+        } else {
+            // Fin del examen
+            window.Router.showError('¡Examen finalizado!');
+        }
+    }
     constructor() {
         this.currentQuestion = null;
         this.selectedOption = null;
@@ -300,36 +391,12 @@ class QuizManager {
     async startQuiz(category) {
         // Inicializar métricas
         this.metrics = new QuizMetrics();
-        
         // Resetear estado del quiz
         this.questionHistory = [];
-        await this.loadQuestion(category);
+        // Ya no se llama a loadQuestion, el flujo usa showCurrentQuestionFromStorage
     }
 
-    async loadQuestion(category) {
-        try {
-            window.Router.showLoading(true);
-            this.startTime = Date.now();
-
-                // Eliminado: llamada a window.Router.apiRequest
-
-            if (response.success) {
-                this.currentQuestion = response.question;
-                this.renderQuestion(response.question);
-                this.updateQuizStats(response);
-                
-                // Actualizar contador en métricas
-                this.updateQuestionCounter();
-            } else {
-                throw new Error(response.error || 'Error al cargar pregunta');
-            }
-        } catch (error) {
-            console.error('Error cargando pregunta:', error);
-            window.Router.showError('Error al cargar la pregunta');
-        } finally {
-            window.Router.showLoading(false);
-        }
-    }
+    // Método loadQuestion eliminado porque no se utiliza en el flujo actual
 
     renderQuestion(question) {
         // Resetear estado
@@ -342,13 +409,18 @@ class QuizManager {
 
         // Imagen (si existe)
         const img = document.getElementById('question-img');
+        const imgWrapper = img.parentElement;
         if (question.image && question.image.trim() !== '') {
-            // El question.image ya contiene la ruta completa "images/nombre.png"
             img.src = question.image;
             img.style.display = 'block';
-            img.onerror = () => img.style.display = 'none';
+            img.onerror = () => {
+                img.style.display = 'none';
+                if (imgWrapper) imgWrapper.style.display = 'none';
+            };
+            if (imgWrapper) imgWrapper.style.display = 'flex';
         } else {
             img.style.display = 'none';
+            if (imgWrapper) imgWrapper.style.display = 'none';
         }
 
         // Opciones
@@ -409,7 +481,7 @@ class QuizManager {
             responseTime: responseTime
         });
 
-        console.log(`Respuesta: ${isCorrect ? '✅ Correcta' : '❌ Incorrecta'} (${responseTime}ms)`);
+        // console.log(`Respuesta: ${isCorrect ? '✅ Correcta' : '❌ Incorrecta'} (${responseTime}ms)`);
     }
 
     showAnswerFeedback(selectedAnswer, correctAnswer) {
@@ -437,8 +509,17 @@ class QuizManager {
             this.metrics.nextQuestion();
         }
 
-        // Cargar siguiente pregunta
-        await this.loadQuestion(AppState.selectedCategory);
+        // Avanzar índice y mostrar siguiente pregunta desde storage
+        let index = parseInt(localStorage.getItem('currentQuestionIndex') || '0', 10);
+        index++;
+        localStorage.setItem('currentQuestionIndex', index.toString());
+        const questions = JSON.parse(localStorage.getItem('questions') || '[]');
+        if (index >= questions.length) {
+            // Limpiar storage al finalizar
+            localStorage.removeItem('questions');
+            localStorage.removeItem('currentQuestionIndex');
+        }
+        this.showCurrentQuestionFromStorage();
     }
 
     updateQuestionCounter() {

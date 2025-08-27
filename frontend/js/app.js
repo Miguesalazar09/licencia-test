@@ -100,13 +100,17 @@ class SPARouter {
     renderCategories(categories) {
         const grid = document.getElementById('categories-grid');
         grid.innerHTML = '';
+        // console.log(categories.data);
+        Object.values(categories.data).forEach(category => {
+            // Buscar icono según la categoría (por código, ej: 'A', 'B', ...)
+            let iconFile = window.categoryIcons && window.categoryIcons[category.category] ? window.categoryIcons[category.category] : 'logo-caba.png';
+            const iconHtml = `<img src="images/icons/${iconFile}" alt="icono ${category.category}" style="height:48px;">`;
 
-        Object.values(categories).forEach(category => {
             const card = document.createElement('div');
             card.className = 'category-card';
             card.innerHTML = `
-                <div class="category-icon">${category.icon}</div>
-                <h4>${category.name}</h4>
+                <div class="category-icon">${iconHtml}</div>
+                <h4>Categoria  ${category.category}</h4>
                 <p>${category.description}</p>
                 <button class="btn-primary" data-category="${category.id}">
                     Comenzar Examen
@@ -126,7 +130,23 @@ class SPARouter {
     selectCategory(categoryId) {
         AppState.selectedCategory = categoryId;
         AppState.questionCount = 0;
-        this.navigateTo('quiz');
+        // Buscar preguntas de la categoría seleccionada
+        fetch(`http://localhost:8081/api/questions?categoryId=${encodeURIComponent(categoryId)}`)
+            .then(res => res.json())
+            .then(data => {
+                // Guardar el array de preguntas directamente
+                localStorage.setItem('questions', JSON.stringify(data));
+                localStorage.setItem('currentQuestionIndex', '0');
+                // Navegar a la página de quiz
+                this.navigateTo('quiz');
+                // Mostrar la primera pregunta
+                if (window.QuizManager && typeof window.QuizManager.showCurrentQuestionFromStorage === 'function') {
+                    window.QuizManager.showCurrentQuestionFromStorage();
+                }
+            })
+            .catch(err => {
+                this.showError('Error al cargar preguntas: ' + err);
+            });
     }
 
     updateCategoryTitle() {
@@ -161,13 +181,22 @@ class SPARouter {
 // Inicializar aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.Router = new SPARouter();
+    // Exportar para uso global
+    window.AppState = AppState;
+
+    // Cargar y renderizar categorías al iniciar
+    fetch('http://localhost:8081/api/categories')
+        .then(res => res.json())
+        .then(data => {
+            // Guardar en AppState
+            AppState.categories = data;
+            // console.log('CATS', data);
+            // Renderizar usando el router
+            if (window.Router && typeof window.Router.renderCategories === 'function') {
+                window.Router.renderCategories(data);
+            }
+        })
+        .catch(err => {
+            console.error('Error al cargar categorías:', err);
+        });
 });
-
-// Exportar para uso global
-window.AppState = AppState;
-
-fetch('http://localhost:8081/api/categories')
-  .then(res => res.json())
-  .then(data => {
-    console.log('Respuesta de la API:', data);
-  });
