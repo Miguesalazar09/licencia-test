@@ -291,21 +291,116 @@ class QuizMetrics {
                     link.id = 'result-css';
                     document.head.appendChild(link);
                 }
-                resultsPage.innerHTML = `
-                    <div class="result-container">
-                        <div class="result-card">
-                            <h1 class="result-title">¡Examen Completado!</h1>
-                            <div class="result-summary">
-                                <div>⏱ Tiempo usado: <br><span class="result-highlight">${timeUsedMinutes}:${timeUsedSeconds.toString().padStart(2, '0')}</span></div>
-                                <div>📊 Porcentaje: <br><span class="result-highlight">${successRate}%</span></div>
-                                <div>✅ Correctas: <br><span class="result-highlight">${correct}/${total}</span></div>
-                                <div>❌ Incorrectas: <br><span class="result-highlight">${incorrect}</span></div>
+                        // Obtener historial de preguntas respondidas
+                        let questionHistory = [];
+                        if (window.QuizManager && Array.isArray(window.QuizManager.questionHistory)) {
+                            questionHistory = window.QuizManager.questionHistory;
+                        }
+
+                        // Inyectar el CSS solo si no está ya presente
+                        if (!document.getElementById('result-css')) {
+                            const link = document.createElement('link');
+                            link.rel = 'stylesheet';
+                            link.href = 'css/result.css';
+                            link.id = 'result-css';
+                            document.head.appendChild(link);
+                        }
+
+                        // Generar acordeón HTML
+                        let accordionHTML = '';
+                        if (questionHistory.length > 0) {
+                            accordionHTML = `
+                                <div class="result-card">
+                                    <h2 style="margin-bottom:10px;">Revisión de preguntas</h2>
+                                    <div class="result-accordion" id="result-accordion">
+                                        ${questionHistory.map((item, idx) => {
+                                            const q = item.question;
+                                            // Imagen si existe
+                                            let imgHTML = '';
+                                            if (q.image && q.image.trim() !== '') {
+                                                imgHTML = `<div class='question-img-wrapper' style='display:flex;justify-content:center;margin-bottom:10px;'><img src='${q.image}' alt='Imagen pregunta' class='question-img' style='max-width:220px;max-height:120px;object-fit:contain;border-radius:8px;box-shadow:0 1px 4px #0001;'></div>`;
+                                            }
+                                            return `
+                                            <div class="accordion-item ${item.isCorrect ? 'correct' : 'incorrect'}">
+                                                <div class="accordion-header" tabindex="0" data-index="${idx}">
+                                                    <span style="font-weight:500;">Pregunta ${idx + 1}</span>
+                                                    <span class="icon">${item.isCorrect ? '✔️' : '❌'}</span>
+                                                </div>
+                                                <div class="accordion-content" id="content-${idx}">
+                                                    ${imgHTML}
+                                                    <div class="question-title" style="margin-bottom:8px;font-weight:500;">${q.question}</div>
+                                                    <div class="question-options" style="margin-bottom:8px;">
+                                                        ${q.options.map(opt => {
+                                                            let optClass = '';
+                                                            if (opt === item.correctAnswer) optClass = 'correct';
+                                                            else if (opt === item.selectedAnswer && item.selectedAnswer !== item.correctAnswer) optClass = 'incorrect';
+                                                            else optClass = 'disabled';
+                                                            return `<div class="option-item ${optClass}" style="margin-bottom:2px;">${opt}</div>`;
+                                                        }).join('')}
+                                                    </div>
+                                                    <div style="margin-bottom:4px;">Tu respuesta: <span class="${item.isCorrect ? 'correct' : 'incorrect'}">${item.selectedAnswer}</span></div>
+                                                    <div>Respuesta correcta: <span class="correct">${item.correctAnswer}</span></div>
+                                                </div>
+                                            </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        resultsPage.innerHTML = `
+                            <div class="result-container">
+                                <div class="result-card">
+                                    <h1 class="result-title">¡Examen Completado!</h1>
+                                    <div class="result-summary">
+                                        <div>⏱ Tiempo usado: <br><span class="result-highlight">${timeUsedMinutes}:${timeUsedSeconds.toString().padStart(2, '0')}</span></div>
+                                        <div>📊 Porcentaje: <br><span class="result-highlight">${successRate}%</span></div>
+                                        <div>✅ Correctas: <br><span class="result-highlight">${correct}/${total}</span></div>
+                                        <div>❌ Incorrectas: <br><span class="result-highlight">${incorrect}</span></div>
+                                    </div>
+                                    <div class="result-status ${passed ? 'aprobado' : 'reprobado'}">Estado: ${passed ? 'APROBADO' : 'NO APROBADO'}</div>
+                                    <button id="restart-quiz-btn" class="result-btn">Volver a intentar</button>
+                                </div>
+                                ${accordionHTML}
                             </div>
-                            <div class="result-status ${passed ? 'aprobado' : 'reprobado'}">Estado: ${passed ? 'APROBADO' : 'NO APROBADO'}</div>
-                            <button id="restart-quiz-btn" class="result-btn">Volver a intentar</button>
-                        </div>
-                    </div>
-                `;
+                        `;
+
+                        // Lógica JS para acordeón (solo en la pantalla de resultados)
+                        setTimeout(() => {
+                            const headers = document.querySelectorAll('.result-accordion .accordion-header');
+                            headers.forEach(header => {
+                                header.addEventListener('click', function() {
+                                    const item = this.parentElement;
+                                    const content = item.querySelector('.accordion-content');
+                                    const isOpen = item.classList.contains('open');
+                                    // Cierra todos
+                                    document.querySelectorAll('.result-accordion .accordion-item').forEach(i => {
+                                        i.classList.remove('open');
+                                        i.querySelector('.accordion-content').style.display = 'none';
+                                    });
+                                    // Abre el seleccionado si no estaba abierto
+                                    if (!isOpen) {
+                                        item.classList.add('open');
+                                        content.style.display = 'block';
+                                    }
+                                });
+                                // Accesibilidad: abrir con Enter o Space
+                                header.addEventListener('keydown', function(e) {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        this.click();
+                                    }
+                                });
+                            });
+                            // Abre el primero por defecto
+                            const first = document.querySelector('.result-accordion .accordion-item');
+                            if(first) {
+                                first.classList.add('open');
+                                const content = first.querySelector('.accordion-content');
+                                if(content) content.style.display = 'block';
+                            }
+                        }, 100);
         resultsPage.style.display = 'block';
 
         // Evento para reiniciar
@@ -566,29 +661,4 @@ class QuizManager {
 document.addEventListener('DOMContentLoaded', () => {
     window.QuizManager = new QuizManager();
 
-    // Botón temporal para testear la pantalla de resultados
-    if (!document.getElementById('test-results-btn')) {
-        const btn = document.createElement('button');
-        btn.id = 'test-results-btn';
-        btn.textContent = 'Ver pantalla de resultados (test)';
-        btn.style = 'position:fixed;top:16px;right:16px;z-index:9999;padding:10px 18px;background:#ffd23f;color:#333;font-weight:bold;border-radius:8px;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);cursor:pointer;';
-        btn.onclick = () => {
-            // Asegura que haya una instancia de metrics
-            if (window.QuizManager) {
-                if (!window.QuizManager.metrics) {
-                    window.QuizManager.metrics = new QuizMetrics();
-                }
-                window.QuizManager.metrics.showResultsPage({
-                    timeUsedMinutes: 0,
-                    timeUsedSeconds: 57,
-                    successRate: 13,
-                    passed: false,
-                    correct: 5,
-                    incorrect: 35,
-                    total: 40
-                });
-            }
-        };
-        document.body.appendChild(btn);
-    }
 });

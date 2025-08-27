@@ -80,6 +80,64 @@
   background: #ffe066;
 }
 
+/* Estilos del acordeón de revisión de preguntas */
+.result-accordion {
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+/* Accordion item: borde y separación */
+.accordion-item {
+  border: 2px solid #e0e0e0;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 4px #0001;
+}
+/* Header: color de fondo según resultado */
+.accordion-header {
+  font-weight: 500;
+  padding: 18px 24px;
+  font-size: 1.1em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  background: #f7f7f7;
+  color: inherit;
+  transition: background 0.2s;
+}
+.accordion-item.correct .accordion-header {
+  background: #d4f8dd;
+  color: #185c2c;
+}
+.accordion-item.incorrect .accordion-header {
+  background: #fde6e6;
+  color: #7a2222;
+}
+.accordion-header .icon {
+  font-size: 1.3em;
+  margin-left: 8px;
+}
+.accordion-item.correct .icon {
+  color: #185c2c;
+}
+.accordion-item.incorrect .icon {
+  color: #7a2222;
+}
+/* Content: fondo blanco */
+.accordion-content {
+  padding: 0 24px 18px 24px;
+  background: #fff;
+  color: inherit;
+  font-size: 1em;
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .result-container, .result-card {
@@ -111,4 +169,23 @@
     font-size: 1.1em;
     padding: 10px 0;
   }
+  .result-accordion {
+    margin-top: 12px;
+  }
+  .accordion-header {
+    font-size: 1em;
+    padding: 14px 12px;
+  }
+  .accordion-content {
+    padding: 0 12px 14px 12px;
+  }
+}
+
+/* Accesibilidad para acordeón */
+.accordion-header[tabindex] {
+  outline: none;
+}
+.accordion-header:focus {
+  box-shadow: 0 0 0 2px #007BFF44;
+  background: #eaf4ff;
 }
