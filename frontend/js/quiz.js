@@ -495,17 +495,22 @@ class QuizManager {
         // Imagen (si existe)
         const img = document.getElementById('question-img');
         const imgWrapper = img.parentElement;
+        const questionImageDiv = imgWrapper; // .question-image
+        const mainContainer = document.querySelector('main');
         if (question.image && question.image.trim() !== '') {
             img.src = question.image;
             img.style.display = 'block';
             img.onerror = () => {
                 img.style.display = 'none';
-                if (imgWrapper) imgWrapper.style.display = 'none';
+                if (questionImageDiv) questionImageDiv.style.display = 'none';
+                if (mainContainer) mainContainer.classList.add('no-image');
             };
-            if (imgWrapper) imgWrapper.style.display = 'flex';
+            if (questionImageDiv) questionImageDiv.style.display = 'flex';
+            if (mainContainer) mainContainer.classList.remove('no-image');
         } else {
             img.style.display = 'none';
-            if (imgWrapper) imgWrapper.style.display = 'none';
+            if (questionImageDiv) questionImageDiv.style.display = 'none';
+            if (mainContainer) mainContainer.classList.add('no-image');
         }
 
         // Opciones

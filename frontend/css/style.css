@@ -1,3 +1,8 @@
+
+/* Quitar altura de quiz-container si no hay imagen */
+.no-image .quiz-container {
+    height: auto !important;
+}
 .question-image {
     display: flex;
     align-items: center;
